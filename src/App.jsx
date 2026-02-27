@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
 // --- 1. THE PROFILE COMPONENT ---
-// I added { isDark } here so the card knows when to turn dark!
 const Profile = ({ name, skill, isDark }) => {
   const [likes, setLikes] = useState(0);
   const [userName, setUserName] = useState(name);
@@ -54,13 +53,11 @@ const Profile = ({ name, skill, isDark }) => {
 // --- 2. THE MAIN APP COMPONENT ---
 function App() {
   const [darkMode, setDarkMode] = useState(false);
-  
   const [people, setPeople] = useState(() => {
-    const savedPeople = localStorage.getItem('teamList');
-    return savedPeople ? JSON.parse(savedPeople) : [
+    const saved = localStorage.getItem('teamList');
+    return saved ? JSON.parse(saved) : [
       { id: 1, name: "Adesola", skill: "Node.js Explorer" },
-      { id: 2, name: "Gemini", skill: "React Guide" },
-      { id: 3, name: "Luna", skill: "CSS Stylist" }
+      { id: 2, name: "Gemini", skill: "React Guide" }
     ];
   });
 
@@ -72,17 +69,28 @@ function App() {
   }, [people]); 
 
   const addPerson = () => {
-    if (newName.trim() === "" || newSkill.trim() === "") return;
+    if (!newName.trim() || !newSkill.trim()) return;
     setPeople([...people, { id: Date.now(), name: newName, skill: newSkill }]);
     setNewName("");
     setNewSkill("");
   };
 
-  const deletePerson = (id) => {
-    setPeople(people.filter(person => person.id !== id));
+  const deletePerson = (id) => setPeople(people.filter(p => p.id !== id));
+
+  // --- CSV EXPORT LOGIC (In the logic area!) ---
+  const exportToCSV = () => {
+    let csvContent = "ID,Name,Skill\n";
+    people.forEach(p => { csvContent += `${p.id},${p.name},${p.skill}\n`; });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "team_members.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  // Single source of truth for colors
   const theme = {
     background: darkMode ? '#1a1a1a' : '#f4f7f6',
     card: darkMode ? '#2d2d2d' : 'white',
@@ -91,70 +99,43 @@ function App() {
   };
 
   return (
-    <div style={{ 
-      backgroundColor: theme.background, 
-      minHeight: '100vh', 
-      padding: '40px 20px', 
-      fontFamily: '"Segoe UI", sans-serif',
-      transition: 'all 0.3s ease',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center'
-    }}>
+    <div style={{ backgroundColor: theme.background, minHeight: '100vh', padding: '40px 20px', transition: 'all 0.3s ease', display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: 'sans-serif' }}>
       <div style={{ maxWidth: '600px', width: '100%' }}>
         
-        <button 
-          onClick={() => setDarkMode(!darkMode)}
-          style={{ float: 'right', cursor: 'pointer', padding: '10px 20px', borderRadius: '50px', border: 'none', backgroundColor: darkMode ? '#fff' : '#333', color: darkMode ? '#333' : '#fff' }}
-        >
-          {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
+        <button onClick={() => setDarkMode(!darkMode)} style={{ float: 'right', cursor: 'pointer', padding: '10px 20px', borderRadius: '50px', border: 'none', backgroundColor: darkMode ? '#fff' : '#333', color: darkMode ? '#333' : '#fff' }}>
+          {darkMode ? '☀️ Light' : '🌙 Dark'}
         </button>
 
         <h1 style={{ color: '#e74c3c' }}>Team Manager</h1>
-        <p style={{ color: theme.subText }}>
-          Current Team Size: <strong>{people.length}</strong> members
-        </p>
+        
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: theme.subText, marginBottom: '20px' }}>
+          <span>Current Team Size: <strong>{people.length}</strong></span>
+          <button onClick={exportToCSV} style={{ cursor: 'pointer', padding: '5px 10px', borderRadius: '5px', border: '1px solid #e74c3c', color: '#e74c3c', background: 'transparent' }}>
+            📥 Export CSV
+          </button>
+        </div>
 
         {/* NEW MEMBER FORM */}
-        <div style={{ backgroundColor: theme.card, color: theme.text, padding: '20px', borderRadius: '12px', marginBottom: '30px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ marginTop: 0 }}>Add New Member</h3>
+        <div style={{ backgroundColor: theme.card, padding: '20px', borderRadius: '12px', marginBottom: '30px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+          <h3 style={{ marginTop: 0, color: theme.text }}>Add New Member</h3>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <input 
-              placeholder="Name" 
-              value={newName} 
-              onChange={(e) => setNewName(e.target.value)} 
-              style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ddd', flex: 1, backgroundColor: darkMode ? '#444' : '#fff', color: darkMode ? '#fff' : '#000' }}
-            />
-            <input 
-              placeholder="Skill" 
-              value={newSkill} 
-              onChange={(e) => setNewSkill(e.target.value)} 
-              style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ddd', flex: 1, backgroundColor: darkMode ? '#444' : '#fff', color: darkMode ? '#fff' : '#000' }}
-            />
-            <button 
-              onClick={addPerson} 
-              style={{ backgroundColor: '#2ecc71', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
-            >
-              Add
-            </button>
+            <input placeholder="Name" value={newName} onChange={(e) => setNewName(e.target.value)} style={{ padding: '10px', flex: 1, borderRadius: '5px', border: '1px solid #ddd' }} />
+            <input placeholder="Skill" value={newSkill} onChange={(e) => setNewSkill(e.target.value)} style={{ padding: '10px', flex: 1, borderRadius: '5px', border: '1px solid #ddd' }} />
+            <button onClick={addPerson} style={{ backgroundColor: '#2ecc71', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer' }}>Add</button>
           </div>
         </div>
 
         {/* THE LIST */}
         {people.map((person) => (
-          <div key={person.id} style={{ marginBottom: '20px' }}>
-            {/* We pass the darkMode state to the Profile here! */}
+          <div key={person.id} style={{ marginBottom: '25px' }}>
             <Profile name={person.name} skill={person.skill} isDark={darkMode} />
-            <button 
-              onClick={() => deletePerson(person.id)}
-              style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold' }}
-            >
+            <button onClick={() => deletePerson(person.id)} style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontWeight: 'bold' }}>
               🗑️ Remove Member
             </button>
           </div>
         ))}
 
-        {people.length === 0 && <p style={{ textAlign: 'center', color: theme.subText }}>No members left in the team!</p>}
+        {people.length === 0 && <p style={{ textAlign: 'center', color: theme.subText }}>No members left!</p>}
       </div>
     </div>
   );
