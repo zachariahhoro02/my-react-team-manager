@@ -1,59 +1,79 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // --- 1. THE PROFILE COMPONENT ---
-const Profile = (props) => {
+// I added { isDark } here so the card knows when to turn dark!
+const Profile = ({ name, skill, isDark }) => {
   const [likes, setLikes] = useState(0);
-  const [userName, setUserName] = useState(props.name);
-  const [userSkill, setUserSkill] = useState(props.skill);
+  const [userName, setUserName] = useState(name);
+  const [userSkill, setUserSkill] = useState(skill);
 
-  const boxColor = likes >= 5 ? 'lightgreen' : 'yellow';
+  const statusColor = likes >= 5 ? '#2ecc71' : '#f1c40f'; 
 
   return (
-    <div style={{ backgroundColor: boxColor, padding: '20px', marginBottom: '10px', borderRadius: '8px' }}>
-      <h2>Name: {userName}</h2>
-      <p>Skill: {userSkill}</p>
+    <div style={{ 
+      backgroundColor: isDark ? '#2d2d2d' : 'white', 
+      padding: '25px', 
+      marginBottom: '15px', 
+      borderRadius: '12px',
+      boxShadow: isDark ? '0 4px 10px rgba(0,0,0,0.3)' : '0 4px 6px rgba(0,0,0,0.1)',
+      borderLeft: `8px solid ${statusColor}`,
+      color: isDark ? '#ffffff' : '#2c3e50',
+      transition: 'all 0.3s ease'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 style={{ margin: '0 0 5px 0', fontSize: '1.5rem' }}>{userName}</h2>
+          <p style={{ margin: '0 0 15px 0', color: isDark ? '#bdc3c7' : '#7f8c8d', fontWeight: 'bold' }}>{userSkill}</p>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+           <span style={{ fontSize: '1.2rem' }}>{likes} ❤️</span>
+        </div>
+      </div>
       
-      <div style={{ marginBottom: '10px' }}>
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
         <input 
-          type="text" 
           value={userName} 
           onChange={(e) => setUserName(e.target.value)} 
-          placeholder="Edit name..."
+          style={{ padding: '8px', borderRadius: '5px', border: '1px solid #ddd', flex: '1', backgroundColor: isDark ? '#444' : '#fff', color: isDark ? '#fff' : '#000' }}
         />
-        <br /><br />
         <input 
-          type="text" 
           value={userSkill} 
           onChange={(e) => setUserSkill(e.target.value)} 
-          placeholder="Edit skill..."
+          style={{ padding: '8px', borderRadius: '5px', border: '1px solid #ddd', flex: '1', backgroundColor: isDark ? '#444' : '#fff', color: isDark ? '#fff' : '#000' }}
         />
       </div>
 
-      <button onClick={() => setLikes(likes + 1)}>Like: {likes} ❤️</button>
-      <button onClick={() => setLikes(0)} style={{ marginLeft: '10px' }}>Reset 🔄</button>
+      <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+        <button onClick={() => setLikes(likes + 1)} style={{ cursor: 'pointer', padding: '8px 15px', borderRadius: '5px', border: 'none', backgroundColor: '#3498db', color: 'white' }}>Like</button>
+        <button onClick={() => setLikes(0)} style={{ cursor: 'pointer', backgroundColor: isDark ? '#444' : '#ecf0f1', color: isDark ? '#fff' : '#000', border: '1px solid #bdc3c7', padding: '8px 15px', borderRadius: '5px' }}>Reset</button>
+      </div>
     </div>
   );
 };
 
 // --- 2. THE MAIN APP COMPONENT ---
 function App() {
-  const [people, setPeople] = useState([
-    { id: 1, name: "Adesola", skill: "Node.js Explorer" },
-    { id: 2, name: "Gemini", skill: "React Guide" },
-    { id: 3, name: "Luna", skill: "CSS Stylist" }
-  ]);
+  const [darkMode, setDarkMode] = useState(false);
+  
+  const [people, setPeople] = useState(() => {
+    const savedPeople = localStorage.getItem('teamList');
+    return savedPeople ? JSON.parse(savedPeople) : [
+      { id: 1, name: "Adesola", skill: "Node.js Explorer" },
+      { id: 2, name: "Gemini", skill: "React Guide" },
+      { id: 3, name: "Luna", skill: "CSS Stylist" }
+    ];
+  });
 
   const [newName, setNewName] = useState("");
   const [newSkill, setNewSkill] = useState("");
 
+  useEffect(() => {
+    localStorage.setItem('teamList', JSON.stringify(people));
+  }, [people]); 
+
   const addPerson = () => {
     if (newName.trim() === "" || newSkill.trim() === "") return;
-    const newMember = {
-      id: Date.now(),
-      name: newName,
-      skill: newSkill
-    };
-    setPeople([...people, newMember]);
+    setPeople([...people, { id: Date.now(), name: newName, skill: newSkill }]);
     setNewName("");
     setNewSkill("");
   };
@@ -62,47 +82,82 @@ function App() {
     setPeople(people.filter(person => person.id !== id));
   };
 
+  // Single source of truth for colors
+  const theme = {
+    background: darkMode ? '#1a1a1a' : '#f4f7f6',
+    card: darkMode ? '#2d2d2d' : 'white',
+    text: darkMode ? '#ffffff' : '#2c3e50',
+    subText: darkMode ? '#bdc3c7' : '#7f8c8d'
+  };
+
   return (
-    <div style={{ padding: '50px', fontFamily: 'Arial' }}>
-      <h1 style={{ color: 'red' }}>Team Manager</h1>
-      <p>Current Team Size: <strong>{people.length}</strong> members</p>
-
-      <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #ccc', borderRadius: '10px' }}>
-        <h3>Add New Member</h3>
-        <input 
-          placeholder="Name" 
-          value={newName} 
-          onChange={(e) => setNewName(e.target.value)} 
-        />
-        <input 
-          placeholder="Skill" 
-          value={newSkill} 
-          onChange={(e) => setNewSkill(e.target.value)} 
-          style={{ marginLeft: '10px' }}
-        />
+    <div style={{ 
+      backgroundColor: theme.background, 
+      minHeight: '100vh', 
+      padding: '40px 20px', 
+      fontFamily: '"Segoe UI", sans-serif',
+      transition: 'all 0.3s ease',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center'
+    }}>
+      <div style={{ maxWidth: '600px', width: '100%' }}>
+        
         <button 
-          onClick={addPerson} 
-          style={{ marginLeft: '10px', backgroundColor: 'green', color: 'white', cursor: 'pointer' }}
+          onClick={() => setDarkMode(!darkMode)}
+          style={{ float: 'right', cursor: 'pointer', padding: '10px 20px', borderRadius: '50px', border: 'none', backgroundColor: darkMode ? '#fff' : '#333', color: darkMode ? '#333' : '#fff' }}
         >
-          Add to Team ➕
+          {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
         </button>
-      </div>
 
-      {people.map((person) => (
-        <div key={person.id} style={{ marginBottom: '30px', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
-          <Profile name={person.name} skill={person.skill} />
-          <button 
-            onClick={() => deletePerson(person.id)}
-            style={{ backgroundColor: 'red', color: 'white', cursor: 'pointer', marginTop: '5px' }}
-          >
-            Remove Member ❌
-          </button>
+        <h1 style={{ color: '#e74c3c' }}>Team Manager</h1>
+        <p style={{ color: theme.subText }}>
+          Current Team Size: <strong>{people.length}</strong> members
+        </p>
+
+        {/* NEW MEMBER FORM */}
+        <div style={{ backgroundColor: theme.card, color: theme.text, padding: '20px', borderRadius: '12px', marginBottom: '30px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+          <h3 style={{ marginTop: 0 }}>Add New Member</h3>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <input 
+              placeholder="Name" 
+              value={newName} 
+              onChange={(e) => setNewName(e.target.value)} 
+              style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ddd', flex: 1, backgroundColor: darkMode ? '#444' : '#fff', color: darkMode ? '#fff' : '#000' }}
+            />
+            <input 
+              placeholder="Skill" 
+              value={newSkill} 
+              onChange={(e) => setNewSkill(e.target.value)} 
+              style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ddd', flex: 1, backgroundColor: darkMode ? '#444' : '#fff', color: darkMode ? '#fff' : '#000' }}
+            />
+            <button 
+              onClick={addPerson} 
+              style={{ backgroundColor: '#2ecc71', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              Add
+            </button>
+          </div>
         </div>
-      ))}
 
-      {people.length === 0 && <p>No members left in the team!</p>}
+        {/* THE LIST */}
+        {people.map((person) => (
+          <div key={person.id} style={{ marginBottom: '20px' }}>
+            {/* We pass the darkMode state to the Profile here! */}
+            <Profile name={person.name} skill={person.skill} isDark={darkMode} />
+            <button 
+              onClick={() => deletePerson(person.id)}
+              style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 'bold' }}
+            >
+              🗑️ Remove Member
+            </button>
+          </div>
+        ))}
+
+        {people.length === 0 && <p style={{ textAlign: 'center', color: theme.subText }}>No members left in the team!</p>}
+      </div>
     </div>
   );
-} // <--- THIS BRACKET WAS LIKELY MISSING OR MISPLACED
+}
 
 export default App;
