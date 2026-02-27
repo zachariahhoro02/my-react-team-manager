@@ -33,12 +33,12 @@ const Profile = ({ name, skill, isDark }) => {
         <input 
           value={userName} 
           onChange={(e) => setUserName(e.target.value)} 
-          style={{ padding: '8px', borderRadius: '5px', border: '1px solid #ddd', flex: '1', backgroundColor: isDark ? '#444' : '#fff', color: isDark ? '#fff' : '#000' }}
+          style={{ padding: '8px', borderRadius: '5px', border: '1px solid #ddd', flex: '1 1 120px', backgroundColor: isDark ? '#444' : '#fff', color: isDark ? '#fff' : '#000' }}
         />
         <input 
           value={userSkill} 
           onChange={(e) => setUserSkill(e.target.value)} 
-          style={{ padding: '8px', borderRadius: '5px', border: '1px solid #ddd', flex: '1', backgroundColor: isDark ? '#444' : '#fff', color: isDark ? '#fff' : '#000' }}
+          style={{ padding: '8px', borderRadius: '5px', border: '1px solid #ddd', flex: '1 1 120px', backgroundColor: isDark ? '#444' : '#fff', color: isDark ? '#fff' : '#000' }}
         />
       </div>
 
@@ -51,9 +51,12 @@ const Profile = ({ name, skill, isDark }) => {
 };
 
 // --- 2. THE MAIN APP COMPONENT ---
-function App() {
+export default function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newSkill, setNewSkill] = useState("");
+  
   const [people, setPeople] = useState(() => {
     const saved = localStorage.getItem('teamList');
     return saved ? JSON.parse(saved) : [
@@ -61,9 +64,6 @@ function App() {
       { id: 2, name: "Gemini", skill: "React Guide" }
     ];
   });
-
-  const [newName, setNewName] = useState("");
-  const [newSkill, setNewSkill] = useState("");
 
   useEffect(() => {
     localStorage.setItem('teamList', JSON.stringify(people));
@@ -78,10 +78,11 @@ function App() {
 
   const deletePerson = (id) => setPeople(people.filter(p => p.id !== id));
 
-  // --- CSV EXPORT LOGIC (In the logic area!) ---
   const exportToCSV = () => {
     let csvContent = "ID,Name,Skill\n";
-    people.forEach(p => { csvContent += `${p.id},${p.name},${p.skill}\n`; });
+    people.forEach(p => { 
+      csvContent += `="${p.id}",${p.name},${p.skill}\n`; 
+    });
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -90,8 +91,6 @@ function App() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    // Adding =" " around the ID tells Excel to treat it as "Text"
-csvContent += `="${p.id}",${p.name},${p.skill}\n`;
   };
 
   const theme = {
@@ -100,15 +99,30 @@ csvContent += `="${p.id}",${p.name},${p.skill}\n`;
     text: darkMode ? '#ffffff' : '#2c3e50',
     subText: darkMode ? '#bdc3c7' : '#7f8c8d'
   };
-  // This runs every time the search box or the people list changes
-const filteredPeople = people.filter(person => 
-  person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  person.skill.toLowerCase().includes(searchTerm.toLowerCase())
-);
 
-  return (
-    <div style={{ backgroundColor: theme.background, minHeight: '100vh', padding: '40px 20px', transition: 'all 0.3s ease', display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: 'sans-serif' }}>
-      <div style={{ maxWidth: '600px', width: '100%' }}>
+  const filteredPeople = people.filter(person => 
+    person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    person.skill.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+ return (
+    <div style={{ 
+      backgroundColor: theme.background, 
+      minHeight: '100vh', 
+      padding: '20px 5%', 
+      fontFamily: 'sans-serif',
+      transition: 'all 0.3s ease',
+      color: theme.text,
+      // --- ADD THESE TWO LINES ---
+      display: 'flex',
+      justifyContent: 'center' 
+    }}>
+      <div style={{ 
+        maxWidth: '600px', 
+        width: '100%',
+        // --- ENSURE THIS IS HERE ---
+        margin: '0 auto' 
+      }}>
         
         <button onClick={() => setDarkMode(!darkMode)} style={{ float: 'right', cursor: 'pointer', padding: '10px 20px', borderRadius: '50px', border: 'none', backgroundColor: darkMode ? '#fff' : '#333', color: darkMode ? '#333' : '#fff' }}>
           {darkMode ? '☀️ Light' : '🌙 Dark'}
@@ -117,63 +131,31 @@ const filteredPeople = people.filter(person =>
         <h1 style={{ color: '#e74c3c' }}>Team Manager</h1>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: theme.subText, marginBottom: '20px' }}>
-          <span>Current Team Size: <strong>{people.length}</strong></span>
+          <span>Team Size: <strong>{people.length}</strong></span>
           <button onClick={exportToCSV} style={{ cursor: 'pointer', padding: '5px 10px', borderRadius: '5px', border: '1px solid #e74c3c', color: '#e74c3c', background: 'transparent' }}>
             📥 Export CSV
           </button>
         </div>
 
-        {/* NEW MEMBER FORM */}
-        <div style={{ backgroundColor: theme.card, padding: '20px', borderRadius: '12px', marginBottom: '30px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ marginTop: 0, color: theme.text }}>Add New Member</h3>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <input placeholder="Name" value={newName} onChange={(e) => setNewName(e.target.value)} style={{ padding: '10px', flex: 1, borderRadius: '5px', border: '1px solid #ddd' }} />
-            <input placeholder="Skill" value={newSkill} onChange={(e) => setNewSkill(e.target.value)} style={{ padding: '10px', flex: 1, borderRadius: '5px', border: '1px solid #ddd' }} />
-            <button onClick={addPerson} style={{ backgroundColor: '#2ecc71', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer' }}>Add</button>
-          </div>
+        <div style={{ backgroundColor: theme.card, padding: '20px', borderRadius: '12px', marginBottom: '30px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <input placeholder="Name" value={newName} onChange={(e) => setNewName(e.target.value)} style={{ padding: '12px', flex: '1 1 200px', borderRadius: '5px', border: '1px solid #ddd', backgroundColor: darkMode ? '#444' : '#fff', color: darkMode ? '#fff' : '#000' }} />
+          <input placeholder="Skill" value={newSkill} onChange={(e) => setNewSkill(e.target.value)} style={{ padding: '12px', flex: '1 1 200px', borderRadius: '5px', border: '1px solid #ddd', backgroundColor: darkMode ? '#444' : '#fff', color: darkMode ? '#fff' : '#000' }} />
+          <button onClick={addPerson} style={{ flex: '1 1 100%', padding: '12px', backgroundColor: '#2ecc71', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>Add Member</button> 
         </div>
 
-        {/* SEARCH BAR */}
-<div style={{ marginBottom: '20px', width: '100%' }}>
-  <input 
-    type="text"
-    placeholder="🔍 Search members by name or skill..."
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-    style={{ 
-      width: '100%', 
-      padding: '12px', 
-      borderRadius: '8px', 
-      border: `1px solid ${darkMode ? '#444' : '#ddd'}`,
-      backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-      color: darkMode ? '#fff' : '#333',
-      boxSizing: 'border-box'
-    }}
-  />
-</div>
+        <div style={{ marginBottom: '20px' }}>
+          <input type="text" placeholder="🔍 Search members..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: `1px solid ${darkMode ? '#444' : '#ddd'}`, backgroundColor: darkMode ? '#2d2d2d' : '#fff', color: darkMode ? '#fff' : '#333', boxSizing: 'border-box' }} />
+        </div>
 
-{/* THE LIST (Now using filteredPeople) */}
-{filteredPeople.map((person) => (
-  <div key={person.id} style={{ marginBottom: '25px' }}>
-    <Profile name={person.name} skill={person.skill} isDark={darkMode} />
-    <button 
-      onClick={() => deletePerson(person.id)} 
-      style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontWeight: 'bold' }}
-    >
-      🗑️ Remove Member
-    </button>
-  </div>
-))}
+        {filteredPeople.map((person) => (
+          <div key={person.id} style={{ marginBottom: '25px' }}>
+            <Profile name={person.name} skill={person.skill} isDark={darkMode} />
+            <button onClick={() => deletePerson(person.id)} style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontWeight: 'bold' }}>🗑️ Remove Member</button>
+          </div>
+        ))}
 
-{/* Show "Not Found" message only if searching and no results */}
-{filteredPeople.length === 0 && searchTerm !== "" && (
-  <p style={{ textAlign: 'center', color: theme.subText }}>No members match "{searchTerm}"</p>
-)}
-
-        {people.length === 0 && <p style={{ textAlign: 'center', color: theme.subText }}>No members left!</p>}
+        {filteredPeople.length === 0 && <p style={{ textAlign: 'center', color: theme.subText }}>No members found.</p>}
       </div>
     </div>
   );
 }
-
-export default App;
