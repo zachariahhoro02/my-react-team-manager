@@ -53,6 +53,7 @@ const Profile = ({ name, skill, isDark }) => {
 // --- 2. THE MAIN APP COMPONENT ---
 function App() {
   const [darkMode, setDarkMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [people, setPeople] = useState(() => {
     const saved = localStorage.getItem('teamList');
     return saved ? JSON.parse(saved) : [
@@ -89,6 +90,8 @@ function App() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    // Adding =" " around the ID tells Excel to treat it as "Text"
+csvContent += `="${p.id}",${p.name},${p.skill}\n`;
   };
 
   const theme = {
@@ -97,6 +100,11 @@ function App() {
     text: darkMode ? '#ffffff' : '#2c3e50',
     subText: darkMode ? '#bdc3c7' : '#7f8c8d'
   };
+  // This runs every time the search box or the people list changes
+const filteredPeople = people.filter(person => 
+  person.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  person.skill.toLowerCase().includes(searchTerm.toLowerCase())
+);
 
   return (
     <div style={{ backgroundColor: theme.background, minHeight: '100vh', padding: '40px 20px', transition: 'all 0.3s ease', display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: 'sans-serif' }}>
@@ -125,15 +133,42 @@ function App() {
           </div>
         </div>
 
-        {/* THE LIST */}
-        {people.map((person) => (
-          <div key={person.id} style={{ marginBottom: '25px' }}>
-            <Profile name={person.name} skill={person.skill} isDark={darkMode} />
-            <button onClick={() => deletePerson(person.id)} style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontWeight: 'bold' }}>
-              🗑️ Remove Member
-            </button>
-          </div>
-        ))}
+        {/* SEARCH BAR */}
+<div style={{ marginBottom: '20px', width: '100%' }}>
+  <input 
+    type="text"
+    placeholder="🔍 Search members by name or skill..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    style={{ 
+      width: '100%', 
+      padding: '12px', 
+      borderRadius: '8px', 
+      border: `1px solid ${darkMode ? '#444' : '#ddd'}`,
+      backgroundColor: darkMode ? '#2d2d2d' : '#fff',
+      color: darkMode ? '#fff' : '#333',
+      boxSizing: 'border-box'
+    }}
+  />
+</div>
+
+{/* THE LIST (Now using filteredPeople) */}
+{filteredPeople.map((person) => (
+  <div key={person.id} style={{ marginBottom: '25px' }}>
+    <Profile name={person.name} skill={person.skill} isDark={darkMode} />
+    <button 
+      onClick={() => deletePerson(person.id)} 
+      style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontWeight: 'bold' }}
+    >
+      🗑️ Remove Member
+    </button>
+  </div>
+))}
+
+{/* Show "Not Found" message only if searching and no results */}
+{filteredPeople.length === 0 && searchTerm !== "" && (
+  <p style={{ textAlign: 'center', color: theme.subText }}>No members match "{searchTerm}"</p>
+)}
 
         {people.length === 0 && <p style={{ textAlign: 'center', color: theme.subText }}>No members left!</p>}
       </div>
